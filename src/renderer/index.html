@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkforceHQ Desktop Agent</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      color-scheme: dark;
+      scrollbar-width: thin;
+      scrollbar-color: #64748b #0f172a;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 8px;
+      border: 2px solid #0f172a;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    ::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .header {
+      background: #1e293b;
+      padding: 12px 16px;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 16px;
+      color: #38bdf8;
+      line-height: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-tabs {
+      display: none;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-tabs.visible { display: flex; }
+    .nav-tab {
+      border: 1px solid #334155;
+      background: transparent;
+      color: #cbd5e1;
+      border-radius: 999px;
+      padding: 0 14px;
+      height: 28px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1;
+    }
+    .nav-tab.active {
+      background: #0284c7;
+      border-color: #0284c7;
+      color: #fff;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #64748b;
+      display: inline-block;
+    }
+    .status-dot.active { background-color: #22c55e; }
+    .status-dot.paused { background-color: #eab308; }
+    .container {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: auto;
+      min-height: 0;
+      justify-content: center;
+      align-items: center;
+      scrollbar-width: thin;
+      scrollbar-color: #64748b #0f172a;
+    }
+    .container.narrow {
+      max-width: none;
+      width: 100%;
+      margin: 0;
+    }
+    #timePane .card {
+      width: 100%;
+      max-width: 400px;
+    }
+    #chatSlot {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      background: #0f172a;
+    }
+    #chatLoader {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #0f172a;
+      z-index: 2;
+    }
+    #chatLoader.hidden { display: none !important; }
+    .chat-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #334155;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: chatspin 0.8s linear infinite;
+    }
+    @keyframes chatspin {
+      to { transform: rotate(360deg); }
+    }
+    #chatLoader p {
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .sharing-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: #4f46e5;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .sharing-bar .btn {
+      width: auto;
+      padding: 8px 12px;
+      background: #fff;
+      color: #312e81;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    label {
+      font-size: 12px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    input {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      width: 100%;
+    }
+    input:focus { border-color: #38bdf8; }
+    .password-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrap input { padding-right: 44px; }
+    .password-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+    .password-toggle:hover {
+      color: #e2e8f0;
+      background: #334155;
+    }
+    .btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #0369a1; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secondary { background: #334155; }
+    .btn-secondary:hover { background: #475569; }
+    .btn-success { background: #16a34a; }
+    .btn-success:hover { background: #15803d; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+    }
+    .btn-ghost:hover { background: #334155; }
+    .user-name { font-weight: 600; font-size: 18px; }
+    .user-email { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .timer-card {
+      text-align: center;
+      padding: 20px 16px;
+      background: #0f172a;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      margin: 14px 0;
+    }
+    .timer-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .timer-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: #38bdf8;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.04em;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .stat-val-sm {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #0f172a;
+      border: 1px solid #334155;
+    }
+    .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+    .hint {
+      margin-top: 12px;
+      font-size: 11px;
+      color: #64748b;
+      line-height: 1.4;
+      text-align: center;
+    }
+    .hidden { display: none !important; }
+    .error-msg { color: #ef4444; font-size: 12px; margin-top: 8px; }
+    .top-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .live-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(2, 6, 23, 0.78);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+    .live-card {
+      width: 100%;
+      max-width: 360px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+    .live-head {
+      background: #4f46e5;
+      padding: 16px 18px;
+    }
+    .live-head h3 { font-size: 15px; margin-bottom: 4px; }
+    .live-head p { font-size: 12px; color: #c7d2fe; }
+    .live-body { padding: 16px 18px; font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+    .live-actions { display: flex; gap: 8px; padding: 0 18px 16px; }
+    .live-actions .btn { width: auto; flex: 1; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">WorkforceHQ Agent</div>
+      <div id="navTabs" class="nav-tabs">
+        <button type="button" id="tabTime" class="nav-tab active">Time</button>
+        <button type="button" id="tabChat" class="nav-tab hidden">Chat</button>
+      </div>
+    </div>
+    <span id="statusDot" class="status-dot"></span>
+  </div>
+  <div id="sharingBar" class="sharing-bar hidden">
+    <span id="sharingText">Your screen is being viewed live</span>
+    <button type="button" id="stopShareBtn" class="btn">Stop sharing</button>
+  </div>
+
+  <div id="timePane" class="container narrow">
+    <div id="loginView" class="card">
+      <h3 style="margin-bottom: 16px;">Sign in</h3>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="emailInput" placeholder="name@company.com" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrap">
+          <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password" />
+          <button type="button" id="passwordToggle" class="password-toggle" aria-label="Show password">Show</button>
+        </div>
+      </div>
+      <button id="loginBtn" class="btn">Sign in</button>
+      <div id="loginError" class="error-msg hidden"></div>
+      <p class="hint">Sign in with your WorkforceHQ employee account to start your work day.</p>
+    </div>
+
+    <div id="activeView" class="card hidden">
+      <div class="top-row">
+        <div>
+          <div id="userName" class="user-name">Employee</div>
+          <div id="userEmail" class="user-email">user@company.com</div>
+        </div>
+        <span id="statusPill" class="status-pill">Not clocked in</span>
+      </div>
+
+      <div class="timer-card">
+        <div class="timer-label">Time working today</div>
+        <div id="workTimer" class="timer-value">00:00:00</div>
+      </div>
+
+      <div class="stat-grid" id="timeDetails">
+        <div class="stat-box">
+          <div class="stat-lbl">Check-in</div>
+          <div id="checkInLabel" class="stat-val-sm">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Check-out</div>
+          <div id="checkOutLabel" class="stat-val-sm">—</div>
+        </div>
+      </div>
+
+      <div id="activityCard" class="stat-box" style="text-align:left; margin-bottom:14px;">
+        <div class="stat-lbl">Currently using</div>
+        <div id="currentApp" class="stat-val-sm" style="margin-top:4px;">—</div>
+        <div id="currentTitle" style="font-size:11px; color:#94a3b8; margin-top:4px; word-break:break-word;">
+          Clock in to start tracking apps &amp; websites
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="clockBtn" class="btn btn-success">Clock in</button>
+        <button id="breakBtn" class="btn btn-secondary hidden">Start break</button>
+        <button id="logoutBtn" class="btn btn-ghost">Sign out</button>
+      </div>
+      <p class="hint" id="workHint">
+        Clock in to start. Website check-in/out and breaks sync here automatically.
+      </p>
+      <div id="clockError" class="error-msg hidden"></div>
+    </div>
+  </div>
+
+  <div id="chatSlot" class="hidden">
+    <div id="chatLoader">
+      <div class="chat-spinner"></div>
+      <p>Opening Slack chat…</p>
+    </div>
+  </div>
+
+  <div id="liveOverlay" class="live-overlay hidden">
+    <div class="live-card">
+      <div class="live-head">
+        <h3>Live screen view requested</h3>
+        <p id="liveFrom">An admin wants to view your screen</p>
+      </div>
+      <div class="live-body" id="liveReason">
+        Accept to share your screen live. The admin will see your desktop until you stop sharing.
+      </div>
+      <div class="live-actions">
+        <button id="liveDeclineBtn" class="btn btn-ghost">Decline</button>
+        <button id="liveAcceptBtn" class="btn btn-success">Accept</button>
+      </div>
+      <div id="liveError" class="error-msg hidden" style="padding: 0 18px 14px;"></div>
+    </div>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    const loginView = document.getElementById('loginView');
+    const activeView = document.getElementById('activeView');
+    const loginBtn = document.getElementById('loginBtn');
+    const clockBtn = document.getElementById('clockBtn');
+    const breakBtn = document.getElementById('breakBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const loginError = document.getElementById('loginError');
+    const liveOverlay = document.getElementById('liveOverlay');
+    const liveFrom = document.getElementById('liveFrom');
+    const liveReason = document.getElementById('liveReason');
+    const liveAcceptBtn = document.getElementById('liveAcceptBtn');
+    const liveDeclineBtn = document.getElementById('liveDeclineBtn');
+    const liveError = document.getElementById('liveError');
+    const navTabs = document.getElementById('navTabs');
+    const tabTime = document.getElementById('tabTime');
+    const tabChat = document.getElementById('tabChat');
+    const timePane = document.getElementById('timePane');
+    const chatSlot = document.getElementById('chatSlot');
+    const chatLoader = document.getElementById('chatLoader');
+    const sharingBar = document.getElementById('sharingBar');
+    const sharingText = document.getElementById('sharingText');
+    const stopShareBtn = document.getElementById('stopShareBtn');
+    let pendingLiveView = null;
+    let currentTab = 'time';
+    let chatPageReady = false;
+    let chatLoadStarted = false;
+    const workTimer = document.getElementById('workTimer');
+    const statusPill = document.getElementById('statusPill');
+    const statusDot = document.getElementById('statusDot');
+    const workHint = document.getElementById('workHint');
+    const checkInLabel = document.getElementById('checkInLabel');
+    const checkOutLabel = document.getElementById('checkOutLabel');
+    const clockError = document.getElementById('clockError');
+    const currentApp = document.getElementById('currentApp');
+    const currentTitle = document.getElementById('currentTitle');
+
+    let latestStatus = null;
+    let tickTimer = null;
+
+    let timerBaseSeconds = 0;
+    let timerBaseAt = Date.now();
+    let timerSessionKey = '';
+    let timerFrozen = true;
+
+    function showLiveViewPrompt(payload) {
+      if (!payload?.sessionId) return;
+      pendingLiveView = payload;
+      liveFrom.textContent = `${payload.fromName || 'An admin'} wants to view your screen`;
+      liveReason.textContent =
+        payload.reason ||
+        'Accept to share your screen live. The admin will see your desktop until you stop sharing.';
+      liveError.classList.add('hidden');
+      liveOverlay.classList.remove('hidden');
+      setTab('time');
+      ipcRenderer.send('chat-bounds', null);
+      syncChatChrome();
+    }
+
+    function syncChatChrome() {
+      const overlayOn = liveOverlay && !liveOverlay.classList.contains('hidden');
+      const show = currentTab === 'chat' && !overlayOn;
+      chatSlot.classList.toggle('hidden', currentTab !== 'chat');
+      const waiting = show && !chatPageReady;
+      if (chatLoader) chatLoader.classList.toggle('hidden', !waiting);
+      requestAnimationFrame(() => {
+        if (!show || !chatPageReady) {
+          ipcRenderer.send('chat-bounds', null);
+          return;
+        }
+        const headerEl = document.querySelector('.header');
+        const sharingEl = document.getElementById('sharingBar');
+        let top = headerEl ? headerEl.getBoundingClientRect().bottom : 52;
+        if (sharingEl && !sharingEl.classList.contains('hidden')) {
+          top = sharingEl.getBoundingClientRect().bottom;
+        }
+        ipcRenderer.send('chat-bounds', { top: Math.round(top) });
+      });
+    }
+
+    function setTab(tab) {
+      currentTab = tab;
+      tabTime.classList.toggle('active', tab === 'time');
+      tabChat.classList.toggle('active', tab === 'chat');
+      timePane.classList.toggle('hidden', tab === 'chat');
+      if (tab === 'chat' && !chatLoadStarted) {
+        chatLoadStarted = true;
+        chatPageReady = false;
+        if (chatLoader) {
+          const p = chatLoader.querySelector('p');
+          if (p) p.textContent = 'Opening Slack chat…';
+        }
+        void ipcRenderer.invoke('chat-open').then((res) => {
+          if (!res?.success) {
+            chatLoadStarted = false;
+            chatPageReady = true;
+            if (chatLoader) {
+              const p = chatLoader.querySelector('p');
+              if (p) p.textContent = res?.error || 'Chat could not load. Try again.';
+            }
+          }
+          syncChatChrome();
+        });
+      }
+      syncChatChrome();
+    }
+
+    function loadChat(status) {
+      if (status.user && status.chatEnabled) {
+        navTabs.classList.add('visible');
+        tabChat.classList.remove('hidden');
+      } else {
+        navTabs.classList.remove('visible');
+        tabChat.classList.add('hidden');
+        setTab('time');
+        chatLoadStarted = false;
+        if (!status.user) {
+          chatPageReady = false;
+          void ipcRenderer.invoke('chat-load', null);
+        }
+      }
+      syncChatChrome();
+    }
+
+    function setSharing(on, fromName) {
+      if (on) {
+        sharingText.textContent = `${fromName || 'An admin'} is viewing your screen live`;
+        sharingBar.classList.remove('hidden');
+      } else {
+        sharingBar.classList.add('hidden');
+      }
+      syncChatChrome();
+    }
+
+    function hideLiveViewPrompt() {
+      pendingLiveView = null;
+      liveOverlay.classList.add('hidden');
+      syncChatChrome();
+    }
+
+    async function respondLiveView(accepted) {
+      if (!pendingLiveView) return;
+      liveAcceptBtn.disabled = true;
+      liveDeclineBtn.disabled = true;
+      liveError.classList.add('hidden');
+      const res = await ipcRenderer.invoke('live-view-respond', {
+        sessionId: pendingLiveView.sessionId,
+        accepted,
+      });
+      liveAcceptBtn.disabled = false;
+      liveDeclineBtn.disabled = false;
+      if (!res?.success) {
+        liveError.textContent = res?.error || 'Could not send your response';
+        liveError.classList.remove('hidden');
+        return;
+      }
+      hideLiveViewPrompt();
+    }
+
+    function formatDuration(totalSec) {
+      const sec = Math.max(0, Math.floor(totalSec || 0));
+      const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+      const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function formatClock(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
+
+    function syncTimerBase(status) {
+      const fromApi =
+        typeof status.workedSeconds === 'number'
+          ? status.workedSeconds
+          : (status.totalWorkedMinutes || 0) * 60;
+      const sessionKey = String(status.openCheckInAt || status.checkInAt || '');
+      const nextFrozen = !status.isCheckedIn || status.isOnBreak;
+
+      // New session / clocked out — hard reset from API
+      if (!status.isCheckedIn || sessionKey !== timerSessionKey) {
+        timerSessionKey = sessionKey;
+        timerBaseSeconds = Math.max(0, fromApi);
+        timerBaseAt = Date.now();
+        timerFrozen = nextFrozen;
+        return;
+      }
+
+      if (nextFrozen) {
+        // Entering break (or already on break): freeze at the higher of live vs API
+        const live = timerFrozen ? timerBaseSeconds : liveWorkedSeconds();
+        timerBaseSeconds = Math.max(live, Math.max(0, fromApi));
+        timerBaseAt = Date.now();
+        timerFrozen = true;
+        return;
+      }
+
+      if (timerFrozen) {
+        // Resuming from break — adopt max so we never lose time
+        timerBaseSeconds = Math.max(timerBaseSeconds, Math.max(0, fromApi));
+        timerBaseAt = Date.now();
+        timerFrozen = false;
+        return;
+      }
+
+      // Actively working: never jump backward when a poll returns a lagging/stale value
+      const live = liveWorkedSeconds();
+      if (fromApi >= live) {
+        timerBaseSeconds = fromApi;
+        timerBaseAt = Date.now();
+      }
+    }
+
+    function liveWorkedSeconds() {
+      if (timerFrozen) return timerBaseSeconds;
+      return timerBaseSeconds + Math.max(0, Math.floor((Date.now() - timerBaseAt) / 1000));
+    }
+
+    function renderStatus(status) {
+      latestStatus = status;
+      clockError.classList.add('hidden');
+      syncTimerBase(status);
+
+      if (status.user) {
+        loginView.classList.add('hidden');
+        activeView.classList.remove('hidden');
+        navTabs.classList.add('visible');
+        document.getElementById('userName').textContent = status.user.name || 'Employee';
+        document.getElementById('userEmail').textContent = status.user.email || '';
+        workTimer.textContent = formatDuration(liveWorkedSeconds());
+        checkInLabel.textContent = formatClock(status.checkInAt || status.openCheckInAt);
+        checkOutLabel.textContent = status.isCheckedIn
+          ? status.isOnBreak
+            ? 'On break'
+            : 'In progress'
+          : formatClock(status.checkOutAt);
+
+        currentApp.textContent = status.isCheckedIn
+          ? status.isOnBreak
+            ? 'On break'
+            : status.currentApp || '—'
+          : '—';
+        currentTitle.textContent = status.isCheckedIn
+          ? status.isOnBreak
+            ? 'Activity tracking paused until you end break'
+            : status.currentWindowTitle || 'Reading active window…'
+          : 'Clock in to start tracking apps & websites';
+
+        if (status.isCheckedIn) {
+          breakBtn.classList.remove('hidden');
+          if (status.isOnBreak) {
+            statusPill.textContent = 'On break';
+            statusPill.style.color = '#38bdf8';
+            statusDot.className = 'status-dot paused';
+            clockBtn.textContent = 'Clock out';
+            clockBtn.className = 'btn btn-danger';
+            breakBtn.textContent = 'End break';
+            breakBtn.className = 'btn btn-success';
+            workHint.textContent =
+              'Break is active (same as website). App/website tracking is paused until you end break.';
+          } else {
+            statusPill.textContent = 'Checked in';
+            statusPill.style.color = '#22c55e';
+            statusDot.className = 'status-dot active';
+            clockBtn.textContent = 'Clock out';
+            clockBtn.className = 'btn btn-danger';
+            breakBtn.textContent = 'Start break';
+            breakBtn.className = 'btn btn-secondary';
+            workHint.textContent =
+              'Clocked in — app/website activity syncs with your company attendance.';
+          }
+        } else {
+          breakBtn.classList.add('hidden');
+          statusPill.textContent = 'Checked out';
+          statusPill.style.color = '#eab308';
+          statusDot.className = 'status-dot paused';
+          clockBtn.textContent = 'Clock in';
+          clockBtn.className = 'btn btn-success';
+          workHint.textContent =
+            'Clock in to start. Website check-in/out and breaks sync here automatically.';
+        }
+
+        if (status.error) {
+          clockError.textContent = status.error;
+          clockError.classList.remove('hidden');
+        }
+        if (status.liveViewRequest) showLiveViewPrompt(status.liveViewRequest);
+        if (status.liveSharing) setSharing(true);
+        loadChat(status);
+      } else {
+        loginView.classList.remove('hidden');
+        activeView.classList.add('hidden');
+        statusDot.className = 'status-dot';
+        hideLiveViewPrompt();
+        setSharing(false);
+        loadChat(status);
+      }
+    }
+
+    async function initStatus() {
+      const status = await ipcRenderer.invoke('get-status');
+      renderStatus(status);
+    }
+
+    loginBtn.addEventListener('click', async () => {
+      loginError.classList.add('hidden');
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value.trim();
+
+      if (!email || !password) {
+        loginError.textContent = 'Please enter email and password';
+        loginError.classList.remove('hidden');
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+      const res = await ipcRenderer.invoke('login', {
+        email,
+        password,
+      });
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Sign in';
+
+      if (res.success) {
+        await initStatus();
+      } else {
+        loginError.textContent = res.error || 'Sign in failed';
+        loginError.classList.remove('hidden');
+      }
+    });
+
+    clockBtn.addEventListener('click', async () => {
+      clockBtn.disabled = true;
+      clockError.classList.add('hidden');
+      const status = await ipcRenderer.invoke('toggle-tracking');
+      clockBtn.disabled = false;
+      renderStatus(status);
+    });
+
+    breakBtn.addEventListener('click', async () => {
+      breakBtn.disabled = true;
+      clockError.classList.add('hidden');
+      const status = await ipcRenderer.invoke('break-toggle', 'short');
+      breakBtn.disabled = false;
+      renderStatus(status);
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      logoutBtn.disabled = true;
+      const status = await ipcRenderer.invoke('logout');
+      logoutBtn.disabled = false;
+      renderStatus(status);
+    });
+
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordToggle = document.getElementById('passwordToggle');
+    passwordToggle.addEventListener('click', () => {
+      const showing = passwordInput.type === 'text';
+      passwordInput.type = showing ? 'password' : 'text';
+      passwordToggle.textContent = showing ? 'Show' : 'Hide';
+      passwordToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+    });
+
+    ipcRenderer.on('status-update', (_, status) => {
+      renderStatus(status);
+    });
+
+    ipcRenderer.on('force-logout', (_, payload) => {
+      const msg =
+        (payload && payload.message) ||
+        'Your employment has been terminated. You have been signed out.';
+      alert(msg);
+      void ipcRenderer.invoke('get-status').then((status) => renderStatus(status));
+    });
+
+    ipcRenderer.on('live-view-request', (_, payload) => {
+      showLiveViewPrompt(payload);
+    });
+
+    liveAcceptBtn.addEventListener('click', () => void respondLiveView(true));
+    liveDeclineBtn.addEventListener('click', () => void respondLiveView(false));
+
+    tabTime.addEventListener('click', () => setTab('time'));
+    tabChat.addEventListener('click', () => setTab('chat'));
+    window.addEventListener('resize', () => syncChatChrome());
+    ipcRenderer.on('chat-relayout', () => syncChatChrome());
+    ipcRenderer.on('chat-loading', (_, loading) => {
+      if (loading) chatPageReady = false;
+      syncChatChrome();
+    });
+    ipcRenderer.on('chat-ready', () => {
+      chatPageReady = true;
+      syncChatChrome();
+    });
+    ipcRenderer.on('chat-error', (_, message) => {
+      chatLoadStarted = false;
+      chatPageReady = true;
+      if (chatLoader) {
+        const p = chatLoader.querySelector('p');
+        if (p) p.textContent = message || 'Chat could not load. Try again.';
+      }
+      syncChatChrome();
+    });
+    stopShareBtn.addEventListener('click', async () => {
+      await ipcRenderer.invoke('live-view-stop');
+      setSharing(false);
+    });
+
+    ipcRenderer.on('live-share-status', (_, payload) => {
+      setSharing(Boolean(payload?.sharing), payload?.fromName);
+      if (payload?.sharing) hideLiveViewPrompt();
+    });
+
+    tickTimer = setInterval(() => {
+      if (latestStatus?.user) {
+        workTimer.textContent = formatDuration(liveWorkedSeconds());
+      }
+    }, 1000);
+
+    initStatus();
+  </script>
+</body>
+</html>
